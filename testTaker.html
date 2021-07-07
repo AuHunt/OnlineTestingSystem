@@ -1,0 +1,140 @@
+<html>
+  <head>
+    <link rel="stylesheet" type="text/css" href="testTaker.css">
+    <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+    <meta content="utf-8" http-equiv="encoding">
+	  <title>NND Test Taker</title>
+	</head>
+ 
+  <h2>Test Taker</h2>
+	
+	<body>
+    <div id="totalForm">
+    </div>
+    <button class="submitbtn" onclick="sendGrades(sessionStorage.uSession, sessionStorage.pSession);">SUBMIT EXAM</button>
+    <button onclick="window.location.href = 'https://web.njit.edu/~nr289/sHomepage.html';" id="homebtn">Back</button>
+	</body>
+ 
+  <script>
+    function onLoad() {
+      sessionVerifier(sessionStorage.uSession, sessionStorage.pSession);
+      loadExam(sessionStorage.uSession, sessionStorage.pSession);
+    }
+    function sessionVerifier(ucid, password) {
+      var ucid = ucid;
+      var password = password;
+      var command = "login";
+      var verification = "command=" + command + "&ucid=" + ucid + "&password=" + password;
+      
+      var ajaxreq = new XMLHttpRequest();
+      ajaxreq.onreadystatechange = function () {
+        if (ajaxreq.readyState == 4 && ajaxreq.status == 200) {
+          var strResponse = ajaxreq.responseText;
+          var objResponse = JSON.parse(strResponse);
+          if (objResponse.userType != 0) {
+            window.location.href = "https://web.njit.edu/~nr289/badSession.html";
+          }
+        }
+      }
+      ajaxreq.open("POST", "requestCurl.php", true);
+      ajaxreq.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+      ajaxreq.send(verification);
+    };
+    function loadExam(ucid, password) {
+      var ucid = ucid;
+      var password = password;
+      var command = "get_exam";
+      var verification = "command=" + command + "&ucid=" + ucid + "&password=" + password;
+      
+      var ajaxreq = new XMLHttpRequest();
+      ajaxreq.onreadystatechange = function () {
+        if (ajaxreq.readyState == 4 && ajaxreq.status == 200) {
+          var strResponse = ajaxreq.responseText;
+          var objResponse = JSON.parse(strResponse);
+          console.log(objResponse);
+          for (var i = 0; i < objResponse.qid.length; i++) {
+            var elemDiv = document.createElement("div");
+            elemDiv.id = objResponse.qid[i];
+            
+            var elem = document.createElement("p");
+            elem.className = "descQ";
+            ocStr = "Question " + (i + 1) + ": " + objResponse.description[i];
+            elem.appendChild(document.createTextNode(ocStr));
+            elemDiv.appendChild(elem);
+            
+            elem = document.createElement("p");
+            elem.className = "worthQ";
+            ocStr = "Worth: " + objResponse.grade[i] + " pts";
+            elem.appendChild(document.createTextNode(ocStr));
+            elemDiv.appendChild(elem);
+            
+            elem = document.createElement("textarea");
+            elem.className = "qtextArea";
+            elemDiv.appendChild(elem);
+            
+            document.getElementById("totalForm").appendChild(elemDiv);
+            elem.addEventListener("keydown", function(event) {
+              if(event.code === "Tab") {
+                  var cursorPos = this.selectionStart;
+                  this.value = [this.value.slice(0,cursorPos), "\t", this.value.slice(cursorPos)].join('');
+                  event.stopPropagation();
+                  event.preventDefault();
+                  this.selectionStart = cursorPos + 1;
+                  this.selectionEnd = cursorPos + 1;
+              } 
+            });
+          }
+        }
+      }
+      ajaxreq.open("POST", "requestCurl.php", true);
+      ajaxreq.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+      ajaxreq.send(verification);
+    }
+    function sendGrades(ucid, password) {
+      var ucid = ucid;
+      var password = password;
+      var command = "store_answers";
+      delim = "!!!";
+      qids = "";
+      studentAnswer = "";
+      var elemDiv = document.getElementById("totalForm");
+      var qArr = elemDiv.getElementsByTagName("div");
+      for (var i = 0; i < qArr.length; i++) {
+        var aArr = qArr[i].getElementsByClassName("qtextArea")[0];
+        aArr.style.background = "#D3D3D3";
+        if (!aArr.value) {
+          for (var i = 0; i < qArr.length; i++) {
+            var aArr = qArr[i].getElementsByClassName("qtextArea")[0];
+            if (!aArr.value) {
+              aArr.style.background = "#EAAEAE";
+            }
+          }
+          alert("You must answer all questions, please go back and fill out the fields in red.");
+          return;
+        }
+        if (i == 0) {
+          qids += qArr[i].id;
+          studentAnswer += aArr.value;
+        } else {
+          qids += "," + qArr[i].id;
+          studentAnswer += delim + aArr.value;
+        }
+      }
+      var submission = "command=" + command + "&ucid=" + ucid + "&password=" + password + "&qids=" + qids + "&studentAnswer=" + studentAnswer;
+      submission = submission.replace(/[+]/g, "%2B");
+      console.log(submission);
+      var ajaxreq = new XMLHttpRequest();
+      ajaxreq.onreadystatechange = function () {
+        if (ajaxreq.readyState == 4 && ajaxreq.status == 200) {
+          var strResponse = ajaxreq.responseText;
+          console.log(strResponse);
+          window.location.href = 'https://web.njit.edu/~nr289/sHomepage.html';
+        }
+      }
+      ajaxreq.open("POST", "submitaCurl.php", true);
+      ajaxreq.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+      ajaxreq.send(submission);
+    }
+    window.onload = onLoad();
+	</script>
+</html>

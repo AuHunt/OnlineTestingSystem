@@ -1,0 +1,545 @@
+<html>
+  <head>
+    <link rel="stylesheet" type="text/css" href="testCreator.css">
+    <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+    <meta content="utf-8" http-equiv="encoding">
+	  <title>NND Test Creator</title>
+	</head>
+
+	<body>
+    <h2>Test Creator</h2>
+    <div class="qbTabs"></div>
+    
+    <div class="optionDiv" id="dfbtn">
+      <div>
+        <button onclick='resetFilters()' class="optionbtn">Reset Filters</button>
+      </div>
+      <div>
+        <button onclick="dropMenu('tFilter')" class="optionbtn">Topic &#9660</button>
+        <div id="tFilter" class="optionbtn-content">
+        </div>
+      </div>
+      <div>
+        <button onclick="dropMenu('cFilter')" class="optionbtn">Constraint &#9660</button>
+        <div id="cFilter" class="optionbtn-content">
+        </div>
+      </div>
+      <div>
+        <button onclick="dropMenu('diffFilter')" class="optionbtn">Difficulty &#9660</button>
+        <div id="diffFilter" class="optionbtn-content">
+          <a href='javascript:getQuestionsQB(sessionStorage.uSession, sessionStorage.pSession, "0", "");'>Easy</a>
+          <a href='javascript:getQuestionsQB(sessionStorage.uSession, sessionStorage.pSession, "1", "");'>Medium</a>
+          <a href='javascript:getQuestionsQB(sessionStorage.uSession, sessionStorage.pSession, "2", "");'>Hard</a>
+        </div>
+      </div>
+      <div>
+        <button onclick="document.getElementById('addqModal').style.display='block'" class="optionbtn">Create Question</button>
+      </div>
+      <div>
+        <button onclick="resetExam(sessionStorage.uSession, sessionStorage.pSession);" class="optionbtn">Finalize Exam Creation</button>
+      </div>                  
+    </div>
+    
+    <div class="tbTabs"></div>
+    
+    <h2 id="tPoints">Total Points: 0</h2>
+    
+    <div id="addqModal" class="modal">
+      <div class="container">
+        <h1>Add Question</h1>
+        <label for="funcQC"><b>Function Name:</b></label>
+        <input type="text" placeholder="Enter Function Name" id="funcQC">
+        <label for="paraQC"><b>Parameters (Enter values comma-separated):</b></label>
+        <input type="text" placeholder="Enter Parameters (example: parameter1,parameter2,parameter3)" id="paraQC">
+        <label for="descQC"><b>Description:</b></label>
+        <input type="text" placeholder="Enter Description of the Question" id="descQC">
+        <label for="diffQC"><b>Difficulty (0=Easy|1=Medium|2=Hard):</b></label>
+        <input type="text" placeholder="Enter Difficulty (example: 0)" id="diffQC">
+        <label for="consQC"><b>Constraints (Enter values comma-separated):</b></label>
+        <input type="text" placeholder="Enter Constraints (example: constraint1,constraint2,constraint3)" id="consQC">
+        <label for="topiQC"><b>Topic:</b></label>
+        <input type="text" placeholder="Enter Topic" id="topiQC">
+        <label for="testQC"><b>Testcases:</b></label>
+        <label for="testQC"><b>Please enter values separated by commas with the last one being the answer. Separate case groups with the | (pipe) symbol.</b></label>
+        <input type="text" placeholder="Enter Testcases (example: paramvalue1,paramvalue2,result|paramvalue3,paramvalue4,result)" id="testQC"> 
+        <div class="modalExit">
+          <button type="button" onclick="document.getElementById('addqModal').style.display='none'" class="cancelbtn">Cancel</button>
+          <button type="button" onclick="addToqb(sessionStorage.uSession, sessionStorage.pSession)" class="addToqbtn">Submit Question</button>
+        </div>
+      </div>
+    </div>
+    
+    <div id="editqModal" class="modal">
+      <div class="container">
+        <h1>Edit Question</h1>
+        <label for="funcQE"><b>Function Name:</b></label>
+        <input type="text" placeholder="Enter Function Name" id="funcQE">
+        <label for="paraQE"><b>Parameters (Enter values comma-separated):</b></label>
+        <input type="text" placeholder="Enter Parameters (example: parameter1,parameter2,parameter3)" id="paraQE">
+        <label for="descQE"><b>Description:</b></label>
+        <input type="text" placeholder="Enter Description of the Question" id="descQE">
+        <label for="diffQE"><b>Difficulty (0=Easy|1=Medium|2=Hard):</b></label>
+        <input type="text" placeholder="Enter Difficulty (example: 0)" id="diffQE">
+        <label for="consQE"><b>Constraints (Enter values comma-separated):</b></label>
+        <input type="text" placeholder="Enter Constraints (example: constraint1,constraint2,constraint3)" id="consQE">
+        <label for="topiQE"><b>Topic:</b></label>
+        <input type="text" placeholder="Enter Topic" id="topiQE">
+        <label for="testQE"><b>Testcases:</b></label>
+        <label for="testQE"><b>Please enter values separated by commas with the last one being the answer. Separate case groups with the | (pipe) symbol.</b></label>
+        <input type="text" placeholder="Enter Testcases (example: paramvalue1,paramvalue2,result|paramvalue3,paramvalue4,result)" id="testQE"> 
+        <div class="modalExit">
+          <button type="button" onclick="document.getElementById('editqModal').style.display='none'" class="cancelbtn">Cancel</button>
+          <button type="button" onclick="editInqb(sessionStorage.uSession, sessionStorage.pSession)" class="addToqbtn">Submit Question</button>
+        </div>
+      </div>
+    </div>
+    
+    <button onclick="window.location.href = 'https://web.njit.edu/~nr289/iHomepage.html';" id="homebtn">Back</button>
+    
+	</body>
+ 
+  <script>
+    var kwList = "";
+    var diffList = "";
+    var firstClick;
+    var modalA = document.getElementById('addqModal');
+    var modalE = document.getElementById('editqModal');
+    var qBank;
+    var totalPoints = 0;
+    var editQid;
+    function onLoad() {
+      sessionVerifier(sessionStorage.uSession, sessionStorage.pSession);
+      getQuestionsQB(sessionStorage.uSession, sessionStorage.pSession, "", "");
+    }
+    function resetFilters() {
+      kwList = "";
+      diffList = "";
+      getQuestionsQB(sessionStorage.uSession, sessionStorage.pSession, "", "");
+    }
+    function removetabFromtb(qid) {
+      elemB = document.getElementById(qid + "qWorth");
+      elemB.value = 0;
+      updateTotal(elemB.id, elemB.value);
+      document.getElementById(qid + 'tbb').parentNode.removeChild(document.getElementById(qid + 'tbb'));
+      document.getElementById(qid + 'tbc').parentNode.removeChild(document.getElementById(qid + 'tbc'));
+    }
+    function resetExam(ucid, password) {
+      command = "delete_exam";
+      var resetE = "command=" + command + "&ucid=" + ucid + "&password=" + password;
+      console.log(resetE);
+      var ajaxreq = new XMLHttpRequest();
+      ajaxreq.onreadystatechange = function () {
+        if (ajaxreq.readyState == 4 && ajaxreq.status == 200) {
+          var strResponse = ajaxreq.responseText;
+          console.log(strResponse);
+          unreleaseGrades(ucid, password);
+        }
+      }
+      ajaxreq.open("POST", "requestCurl.php", true);
+      ajaxreq.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+      ajaxreq.send(resetE);
+    }
+    function unreleaseGrades(ucid, password) {
+      command = "release_exam"
+      release = "command=" + command + "&ucid=" + ucid + "&password=" + password + "&nvm=1";
+      console.log(release);
+      var ajaxreq = new XMLHttpRequest();
+      ajaxreq.onreadystatechange = function () {
+        if (ajaxreq.readyState == 4 && ajaxreq.status == 200) {
+          var strResponse = ajaxreq.responseText;
+          addExam(ucid, password);
+        }
+      }
+      ajaxreq.open("POST", "releaseCurl.php", true);
+      ajaxreq.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+      ajaxreq.send(release); 
+    }
+    function addExam(ucid, password) {
+      command = "add_to_exam";
+      var tbTabs = document.getElementsByClassName('tbTabbutton');
+      var qids = "";
+      var grades = "";
+      if (tbTabs.length == 0) {
+        alert("Test Bank Is Empty");
+        return;
+      }
+      for (var i = 0; i < tbTabs.length; i++) {
+        var rawQID = tbTabs[i].id;
+        console.log(rawQID);
+        var truQID = rawQID.slice(0, -3);
+        var grade = document.getElementById(truQID + 'qWorth').value;
+        if (!grade || grade == 0) {
+          alert("Worth undefined for question " + (i+1) + " in the test bank.");
+          return; 
+        }
+        if (i == 0) {
+          qids += truQID;
+          grades += grade;
+        } else {
+          qids += "," + truQID;
+          grades += "," + grade;
+        }        
+      }
+      var addE = "command=" + command + "&ucid=" + ucid + "&password=" + password + "&qids=" + qids + "&grades=" + grades;
+      console.log(addE);
+      var ajaxreq = new XMLHttpRequest();
+      ajaxreq.onreadystatechange = function () {
+        if (ajaxreq.readyState == 4 && ajaxreq.status == 200) {
+          var strResponse = ajaxreq.responseText;
+          console.log(strResponse);
+          window.location.href = 'https://web.njit.edu/~nr289/iHomepage.html';
+        }
+      }
+      ajaxreq.open("POST", "addExamCurl.php", true);
+      ajaxreq.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+      ajaxreq.send(addE);
+    }
+    function rmvFromqb(ucid, password, qid) {
+      command = "delete_from_question_bank";
+      var rmvQ = "command=" + command + "&ucid=" + ucid + "&password=" + password + "&qid=" + qid;
+      console.log(rmvQ);
+      var ajaxreq = new XMLHttpRequest();
+      ajaxreq.onreadystatechange = function () {
+        if (ajaxreq.readyState == 4 && ajaxreq.status == 200) {
+          var strResponse = ajaxreq.responseText;
+          console.log(strResponse);
+          document.getElementById(qid + 'qbb').parentNode.removeChild(document.getElementById(qid + 'qbb'));
+          document.getElementById(qid + 'qbc').parentNode.removeChild(document.getElementById(qid + 'qbc'));
+        }
+      }
+      ajaxreq.open("POST", "delqCurl.php", true);
+      ajaxreq.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+      ajaxreq.send(rmvQ);
+    }
+    function addToqb(ucid, password) {
+      command = "add_to_question_bank";
+      var funcQ = document.getElementById("funcQC").value;
+      var paraQ = document.getElementById("paraQC").value;
+      var descQ = document.getElementById("descQC").value;
+      var diffQ = document.getElementById("diffQC").value;
+      var consQ = document.getElementById("consQC").value;
+      var topiQ = document.getElementById("topiQC").value;
+      var testQ = document.getElementById("testQC").value;
+      
+      var addQ = "command=" + command + "&ucid=" + ucid + "&password=" + password + "&func=" + funcQ + "&params=" + paraQ + "&description=" + descQ + "&difficulty=" + diffQ + "&constraints=" + consQ + "&topic=" + topiQ + "&testcases=" + testQ;
+      addQ = addQ.replace(/[+]/g, "%2B");
+      console.log(addQ);
+      modalA.style.display='none';
+      var ajaxreq = new XMLHttpRequest();
+      ajaxreq.onreadystatechange = function () {
+        if (ajaxreq.readyState == 4 && ajaxreq.status == 200) {
+          var strResponse = ajaxreq.responseText;
+          console.log(strResponse);
+          getQuestionsQB(sessionStorage.uSession, sessionStorage.pSession, "", "");
+        }
+      }      
+      ajaxreq.open("POST", "addqCurl.php", true);
+      ajaxreq.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+      ajaxreq.send(addQ);
+    }
+    function editInqb(ucid, password) {
+      command = "edit_question";
+      qid = editQid;
+      var funcQ = document.getElementById("funcQE").value;
+      var paraQ = document.getElementById("paraQE").value;
+      var descQ = document.getElementById("descQE").value;
+      var diffQ = document.getElementById("diffQE").value;
+      var consQ = document.getElementById("consQE").value;
+      var topiQ = document.getElementById("topiQE").value;
+      var testQ = document.getElementById("testQE").value;
+      
+      var editQ = "command=" + command + "&ucid=" + ucid + "&password=" + password + "&qid=" + qid + "&func=" + funcQ + "&params=" + paraQ + "&description=" + descQ + "&difficulty=" + diffQ + "&constraints=" + consQ + "&topic=" + topiQ + "&testcases=" + testQ;
+      editQ = editQ.replace(/[+]/g, "%2B");
+      console.log(editQ);
+      modalE.style.display='none';
+      var ajaxreq = new XMLHttpRequest();
+      ajaxreq.onreadystatechange = function () {
+        if (ajaxreq.readyState == 4 && ajaxreq.status == 200) {
+          var strResponse = ajaxreq.responseText;
+          console.log(strResponse);
+          getQuestionsQB(sessionStorage.uSession, sessionStorage.pSession, "", "");
+        }
+      }
+      ajaxreq.open("POST", "editqCurl.php", true);
+      ajaxreq.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+      ajaxreq.send(editQ);
+    }
+    function editSteps(qidE) {
+      editQid = qidE;
+      for (var i = 0; i < qBank.qid.length; i++) {
+        if (qBank.qid[i] == editQid) {
+          document.getElementById("funcQE").value = qBank.func[i];
+          document.getElementById("paraQE").value = qBank.params[i];
+          document.getElementById("descQE").value = qBank.description[i];
+          document.getElementById("diffQE").value = qBank.difficulty[i];
+          document.getElementById("consQE").value = qBank.constraints[i];
+          document.getElementById("topiQE").value = qBank.topic[i];
+          var ocStr = ""; 
+          for (var x = 0; x < qBank.testcases[i].length; x++) {
+             ocStr += qBank.testcases[i][x];
+             if ((x+1) != qBank.testcases[i].length) {
+               ocStr += "|";
+             }
+          }
+          document.getElementById("testQE").value = ocStr;
+        }
+      }
+      document.getElementById('editqModal').style.display='block';      
+    }
+    function qbTotb(qid) {
+      var qbTabs = document.getElementsByClassName("qbTabbutton");
+      var qbTabscontent = document.getElementsByClassName("qbTabscontent");
+      var tbTabs = document.getElementsByClassName("tbTabs")[0];
+      var qbb = qid + "qbb";
+      var qbc = qid + "qbc";
+      for (var i = 0; i < qbTabs.length; i++){
+        if (qbTabs[i].id == qbb) {
+          var movTab = qbTabs[i].cloneNode(true);
+          movTab.id = qid + "tbb";
+          movTab.className = "tbTabbutton";
+          var ocStr = 'tabActivator(event, "tbTabbutton", "tbTabscontent", "' + qid + 'tbc' + '");';
+          movTab.setAttribute("onclick", ocStr);
+          tbTabs.appendChild(movTab);
+        }
+      }
+      for (var i = 0; i < qbTabscontent.length; i++) {
+        if (qbTabscontent[i].id == qbc) {
+          var movTabcontent = qbTabscontent[i].cloneNode(true);
+          movTabcontent.id = qid + "tbc";
+          movTabcontent.className = "tbTabscontent";
+          while (movTabcontent.getElementsByTagName('button')[0]) {
+            movTabcontent.removeChild(movTabcontent.getElementsByTagName('button')[0]);
+          }
+          var elemB = document.createElement("input");
+          elemB.id = qid + "qWorth";
+          elemB.className = "qWorth";
+          for (var x = 0; x < qBank.qid.length; x++){
+            if (qBank.qid[x] == qid) {
+              elemB.value = '0';
+              elemB.placeholder = '0';
+            }
+          }
+          var ocStr = 'updateTotal("' + elemB.id + '", this.value);';
+          elemB.setAttribute("onchange", ocStr);
+          
+          var elemC = document.createElement("label");
+          elemC.setAttribute("for", elemB.id);
+          elemC.innerHTML = "Question's Worth: ";
+          movTabcontent.appendChild(elemC);
+          movTabcontent.appendChild(elemB);
+          
+          elemB = document.createElement("button");
+          elemB.appendChild(document.createTextNode("Remove Question From Test"));
+          elemB.className = "optionbtn";
+          ocStr = 'removetabFromtb("' + qid + '");';
+          elemB.setAttribute("onclick", ocStr);
+          movTabcontent.appendChild(elemB);
+
+          document.body.appendChild(movTabcontent);
+        }
+      }
+    }
+    function updateTotal(inputId, chVal) {
+      var x = document.getElementById(inputId);
+      totalPoints += Number(chVal) - Number(x.placeholder);
+      x.placeholder = chVal;
+      var y = document.getElementById('tPoints');
+      y.textContent = "Total Points: " + totalPoints;
+    }
+    function sessionVerifier(ucid, password) {
+      var command = "login";
+      var request = "command=" + command + "&ucid=" + ucid + "&password=" + password;
+      var ajaxreq = new XMLHttpRequest();
+      ajaxreq.onreadystatechange = function () {
+        if (ajaxreq.readyState == 4 && ajaxreq.status == 200) {
+          var strResponse = ajaxreq.responseText;
+          var objResponse = JSON.parse(strResponse);
+          if (objResponse.userType != 1) {
+            window.location.href = "https://web.njit.edu/~nr289/badSession.html";
+          }
+        }
+      }
+      ajaxreq.open("POST", "requestCurl.php", true);
+      ajaxreq.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+      ajaxreq.send(request);
+    };
+    function getQuestionsQB(ucid, password, diffFilter, kwFilter) {
+      var command = "get_question_bank";
+      var request = "command=" + command + "&ucid=" + ucid + "&password=" + password;
+      if (diffFilter) {
+          diffList = diffFilter;
+      }
+      if (diffList) {
+        request += "&filter_difficulty=" + diffList;
+      } 
+      if (kwFilter) {
+        if (kwList) {
+          kwList += "," + kwFilter;
+        } else {
+          kwList = kwFilter;
+        }
+      }
+      if (kwList) {
+        request += "&filter_keywords=" + kwList;
+      }
+
+      console.log(request);
+      var ajaxreq = new XMLHttpRequest();
+      ajaxreq.onreadystatechange = function () {
+        if (ajaxreq.readyState == 4 && ajaxreq.status == 200) {
+          var strResponse = ajaxreq.responseText;
+          var objResponse = JSON.parse(strResponse);
+          console.log(objResponse);
+          qBank = objResponse;  
+          if (!kwList) {
+            cfElem = document.getElementById("cFilter");
+            while (cfElem.firstChild) {
+              cfElem.removeChild(cfElem.firstChild);
+            }
+            tfElem = document.getElementById("tFilter");
+            while (tfElem.firstChild) {
+              tfElem.removeChild(tfElem.firstChild);
+            }
+            var repeatCheck = [];
+            var repeatCheck2 = [];
+            for (var i = 0; i < objResponse.qid.length; i++) {
+              var constrList = objResponse.constraints[i].split(",");
+              for (var x = 0; x < constrList.length; x++) {
+                if (!repeatCheck.includes(constrList[x])) {
+                  repeatCheck.push(constrList[x]);
+                  var elem = document.createElement("a");
+                  var ocStr = "getQuestionsQB(sessionStorage.uSession, sessionStorage.pSession,\'\', \'" + constrList[x] + "\');";
+                  elem.setAttribute("onclick", ocStr);
+                  elem.appendChild(document.createTextNode(constrList[x]));
+                  cfElem.appendChild(elem);
+                }
+              }
+              if (!repeatCheck2.includes(objResponse.topic[i])) {
+                repeatCheck2.push(objResponse.topic[i]);
+                var elem = document.createElement("a");
+                var ocStr = "getQuestionsQB(sessionStorage.uSession, sessionStorage.pSession,\'\', \'" + objResponse.topic[i] + "\');";
+                elem.setAttribute("onclick", ocStr);
+                elem.appendChild(document.createTextNode(objResponse.topic[i]));
+                tfElem.appendChild(elem);
+              }
+            }    
+          }
+          var qbTabs = document.getElementsByClassName("qbTabs")[0];
+          var qbTabscontentList = document.getElementsByClassName("qbTabscontent");
+          while (qbTabs.firstChild) {
+            qbTabs.removeChild(qbTabs.firstChild);
+          }
+          while (qbTabscontentList.length > 0) {
+            qbTabscontentList[0].parentNode.removeChild(qbTabscontentList[0]);
+          }
+          for (var i = 0; i < objResponse.qid.length; i++) {
+            var elem = document.createElement("button");
+            elem.className = "qbTabbutton";
+            elem.id = objResponse.qid[i] + "qbb";
+            if ( i == 0 ) {
+              firstClick = elem.id;
+            }
+            elem.appendChild(document.createTextNode(objResponse.description[i]));
+            var ocStr = 'tabActivator(event, "qbTabbutton", "qbTabscontent", "' + objResponse.qid[i] + "qbc" + '");';
+            elem.setAttribute("onclick", ocStr);
+            qbTabs.appendChild(elem); 
+
+            divTabC = document.createElement("div");
+            divTabC.className = "qbTabscontent";
+            divTabC.id = objResponse.qid[i] + "qbc";
+            
+            var diffSet = "";
+            if (objResponse.difficulty[i] == 0) {
+              diffSet = "Easy";
+            } else if (objResponse.difficulty[i] == 1) {
+              diffSet = "Medium";
+            } else {
+              diffSet = "Hard";
+            }
+            
+            ocStr = "<p>Question ID: " + objResponse.qid[i] + "<br>";
+            ocStr += "Description: " + objResponse.description[i] + "<br>";
+            ocStr += "<br>";
+            ocStr += "Difficulty: " + diffSet + "<br>";
+            ocStr += "Topic: " + objResponse.topic[i] + "<br>";
+            ocStr += "Constraints: " + objResponse.constraints[i] + "<br>";
+            ocStr += "<br>";
+            ocStr += "Function: " + objResponse.func[i] + "<br>";
+            ocStr += "Parameters: " + objResponse.params[i] + "<br>";
+            ocStr += "Test Cases: ";
+            for (var x = 0; x < objResponse.testcases[i].length; x++) {
+               ocStr += objResponse.testcases[i][x];
+               if ((x+1) != objResponse.testcases[i].length) {
+                 ocStr += "|";
+               }
+            }
+            ocStr += "</p>";
+            divTabC.innerHTML = ocStr;
+            
+            var elemB = document.createElement("button");
+            elemB.appendChild(document.createTextNode("Add Question To Test"));
+            elemB.className = "optionbtn";
+            ocStr = 'qbTotb("' + objResponse.qid[i] + '");';
+            elemB.setAttribute("onclick", ocStr);
+            divTabC.appendChild(elemB);
+            
+            elemB = document.createElement("button");
+            elemB.appendChild(document.createTextNode("Edit Question"));
+            elemB.className = "optionbtn";
+            ocStr = 'editSteps("' + objResponse.qid[i] + '");';
+            elemB.setAttribute("onclick", ocStr);
+            divTabC.appendChild(elemB);
+            
+            elemB = document.createElement("button");
+            elemB.appendChild(document.createTextNode("Remove Question From Question Bank"));
+            ocStr = 'rmvFromqb(sessionStorage.uSession, sessionStorage.pSession, "' + objResponse.qid[i] + '");';
+            elemB.setAttribute("onclick", ocStr);
+            elemB.className = "optionbtn";
+            divTabC.appendChild(elemB);
+            
+            document.body.appendChild(divTabC);                 
+          }
+          document.getElementById(firstClick).click();
+        }
+      }
+      ajaxreq.open("POST", "requestCurl.php", true);
+      ajaxreq.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+      ajaxreq.send(request);
+    };
+    function dropMenu(filter) {
+      document.getElementById(filter).classList.toggle("show");
+    }
+    window.onclick = function(event) {
+      if (event.target == modalA) {
+        modalA.style.display = "none";
+      }
+      if (event.target == modalE) {
+        modalE.style.display = "none";
+      }
+      if (!event.target.matches('.optionbtn')) {
+        var dropdowns = document.getElementsByClassName("optionbtn-content");
+        for (var i = 0; i < dropdowns.length; i++) {
+          if (dropdowns[i].classList.contains('show')) {
+            dropdowns[i].classList.remove('show');
+          }
+        }
+      }
+    }
+    function tabActivator(event, tabbuttonClass, tabcontentClass, id) {
+      var tabscontent = document.getElementsByClassName(tabcontentClass);
+      for (var i = 0; i < tabscontent.length; i++) {
+        tabscontent[i].style.display = "none";
+      }
+      
+      var tabButton = document.getElementsByClassName(tabbuttonClass);
+      for (var i = 0; i < tabButton.length; i++) {
+        tabButton[i].className = tabButton[i].className.replace(" active", "");
+      }
+      
+      document.getElementById(id).style.display = "block";
+      event.currentTarget.className += " active";
+    };
+        
+    window.onload = onLoad();
+	</script>
+</html>

@@ -1,0 +1,82 @@
+<html>
+  <head>
+    <link rel="stylesheet" type="text/css" href="sHomepage.css">
+    <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+    <meta content="utf-8" http-equiv="encoding">
+	  <title>NND Homepage</title>
+	</head>
+    
+	<body>
+    <button onclick="logout();" id="homebtn">LOGOUT</button>
+    
+    <div class="menuForm">
+      <h2>Student Homepage</h2>
+      <button type="button" class="HoverBoi" id="ttButton" onclick="redirector(this.id);">Take Test</button>
+      <button type="button" class="HoverBoi" id="rtButton" onclick="redirector(this.id);">Review Test</button>
+    </div>
+    
+	</body>
+ 
+  <script>
+    function onLoad() {
+      sessionVerifier(sessionStorage.uSession, sessionStorage.pSession);
+    }
+    function logout() {
+      sessionStorage.uSession = '';
+      sessionStorage.pSession = '';
+      window.location.href = 'https://web.njit.edu/~nr289/login.html';
+    }
+    function sessionVerifier(ucid, password) {
+      var ucid = ucid;
+      var password = password;
+      var command = "login";
+      var verification = "command=" + command + "&ucid=" + ucid + "&password=" + password;
+      console.log(verification);
+      var ajaxreq = new XMLHttpRequest();
+      ajaxreq.onreadystatechange = function () {
+        if (ajaxreq.readyState == 4 && ajaxreq.status == 200) {
+          var statusArr = ajaxreq.responseText;
+          var statusObj = JSON.parse(statusArr);
+          if (statusObj.userType != 0) {
+            window.location.href = "https://web.njit.edu/~nr289/badSession.html";
+          }
+          releaseCheck(ucid, password);
+        }
+      }
+      ajaxreq.open("POST", "requestCurl.php", true);
+      ajaxreq.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+      ajaxreq.send(verification);
+    };
+  	function redirector(elemId) {
+      if (elemId == "ttButton"){
+        window.location.href = "https://web.njit.edu/~nr289/testTaker.html";
+      } else if (elemId == "rtButton"){
+        window.location.href = "https://web.njit.edu/~nr289/testReviewer.html";
+      }
+    };
+    function releaseCheck(ucid, password) {
+      command = "grade_release_check";
+      var check = "command=" + command + "&ucid=" + ucid + "&password=" + password;
+      
+      var ajaxreq = new XMLHttpRequest();
+      ajaxreq.onreadystatechange = function () {
+        if (ajaxreq.readyState == 4 && ajaxreq.status == 200) {
+          var strResponse = ajaxreq.responseText;
+          var objResponse = JSON.parse(strResponse);
+          
+          var reviewTestbutton = document.getElementById("rtButton");
+          if (objResponse.released == "0") {
+            reviewTestbutton.disabled = true;
+          } else if (objResponse.released == "1") {
+            reviewTestbutton.disabled = false;
+          }
+          
+        }
+      }
+      ajaxreq.open("POST", "requestCurl.php", true);
+      ajaxreq.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+      ajaxreq.send(check);
+    }
+    window.onload = onLoad();
+	</script>
+</html>

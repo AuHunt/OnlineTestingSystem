@@ -1,0 +1,35 @@
+<html>
+  <head>
+    <link rel="stylesheet" type="text/css" href="login.css">
+    <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+    <meta content="utf-8" http-equiv="encoding">
+	  <title>NND Bad Session</title>
+	</head>
+	
+	<script>
+	function redirector(elemId) {
+    if (elemId == "rdButton"){
+      //sessionStorage.uSession = "";
+      //sessionStorage.pSession = "";
+      window.location.href = "https://web.njit.edu/~nr289/login.html";
+    }
+  };
+	</script>
+ 
+  <h2>Invalid Session</h2>
+  <br>
+
+	<body>
+     
+    <span>Press button to be automatically redirected to the login page.</span>
+    <br>
+    <br>
+    <br>
+    <button type="button" class="HoverBoi" id="rdButton" onclick="redirector(this.id);">REDIRECT TO LOGIN</button>
+    <br>
+
+    <div id="test"></div>
+        
+	</body>
+
+</html>

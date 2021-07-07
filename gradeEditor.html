@@ -1,0 +1,287 @@
+<html>
+  <head>
+    <link rel="stylesheet" type="text/css" href="gradeEditor.css">
+    <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+    <meta content="utf-8" http-equiv="encoding">
+	  <title>NND Grade Editor</title>
+	</head>
+
+  <h2>Grade Editor</h2>
+
+	<body>
+    <div class="stuTabs"></div>
+    <button class="updatebtn" onclick="finalizeGrades(sessionStorage.uSession, sessionStorage.pSession);">Save All Changes And Release Grades</button>
+    <button onclick="window.location.href = 'https://web.njit.edu/~nr289/iHomepage.html';" id="homebtn">Back</button>
+	</body>
+ 
+  <script>
+    var firstClick;
+    var objQb;
+    var objEg;
+    function onLoad() {
+      sessionVerifier(sessionStorage.uSession, sessionStorage.pSession);
+      getQB(sessionStorage.uSession, sessionStorage.pSession);
+    };
+    function sessionVerifier(ucid, password) {
+      var ucid = ucid;
+      var password = password;
+      var command = "login";
+      var verification = "command=" + command + "&ucid=" + ucid + "&password=" + password;
+      
+      var ajaxreq = new XMLHttpRequest();
+      ajaxreq.onreadystatechange = function () {
+        if (ajaxreq.readyState == 4 && ajaxreq.status == 200) {
+          var statusArr = ajaxreq.responseText;
+          var statusObj = JSON.parse(statusArr);
+          if (statusObj.userType != 1) {
+            window.location.href = "https://web.njit.edu/~nr289/badSession.html";
+          }
+        }
+      }
+      ajaxreq.open("POST", "requestCurl.php", true);
+      ajaxreq.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+      ajaxreq.send(verification);
+    };
+    function getQB(ucid, password) {
+      command = "get_question_bank";
+      request = "command=" + command + "&ucid=" + ucid + "&password=" + password;
+      
+      var ajaxreq = new XMLHttpRequest();
+      ajaxreq.onreadystatechange = function () {
+        if (ajaxreq.readyState == 4 && ajaxreq.status == 200) {
+          var strResponse = ajaxreq.responseText;
+          var objResponse = JSON.parse(strResponse);
+          objQb = objResponse;
+          getStudentExams(sessionStorage.uSession, sessionStorage.pSession);
+        }
+      }
+      ajaxreq.open("POST", "requestCurl.php", true);
+      ajaxreq.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+      ajaxreq.send(request);
+    }
+    function getStudentExams(ucid, password) {
+      command = "get_completed_exam_grades";
+      studentRequest = "command=" + command + "&ucid=" + ucid + "&password=" + password;
+      
+      var ajaxreq = new XMLHttpRequest();
+      ajaxreq.onreadystatechange = function () {
+        if (ajaxreq.readyState == 4 && ajaxreq.status == 200) {
+          var strResponse = ajaxreq.responseText;
+          var objResponse = JSON.parse(strResponse);
+          console.log(objResponse);
+          objEg = objResponse;
+                    
+          for (var i = 0; i < objResponse.students.length; i++) {
+            var elemTabList = document.getElementsByClassName("stuTabs")[0];
+            var stuTabbutton = document.createElement("button");
+            stuTabbutton.className = "stuTabbutton";
+            stuTabbutton.id = objResponse.students[i] + "stb";
+            if (i == 0) {
+              firstClick = stuTabbutton.id;
+            }
+            stuTabbutton.appendChild(document.createTextNode(objResponse.students[i]));
+            var ocStr = 'tabActivator(event, "stuTabbutton", "stuTabscontent", "' + objResponse.students[i] + "stc" + '");';
+            stuTabbutton.setAttribute("onclick", ocStr);
+            elemTabList.appendChild(stuTabbutton);
+            
+            var elemTabcontent = document.createElement("div");
+            elemTabcontent.className = "stuTabscontent";
+            elemTabcontent.id = objResponse.students[i] + "stc";
+            for (var x = 0; x < objResponse.qids[i].length; x++) {
+              var truQ;
+              var tabcontentQdiv = document.createElement("div");
+              for (var y = 0; y < objQb.qid.length; y++) {
+                if (objQb.qid[y] == objResponse.qids[i][x]) {
+                  truQ = objQb.description[y];
+                }
+              }
+              var elemQ = document.createElement("p");
+              elemQ.appendChild(document.createTextNode("Question: " + truQ));
+              tabcontentQdiv.appendChild(elemQ);
+              
+              var elemA = document.createElement("pre");
+              elemA.appendChild(document.createTextNode("Answer:\n" + objResponse.answers[i][x]));
+              tabcontentQdiv.appendChild(elemA);
+              
+              var elemAR = document.createElement("pre");
+              elemAR.innerHTML = "Autograder:\n" + objResponse.autograder[i][x];
+              tabcontentQdiv.appendChild(elemAR);
+              
+              var elemAR = document.createElement("pre");
+              elemAR.appendChild(document.createTextNode("Instructor comments:\n" + objResponse.comments[i][x]));
+              tabcontentQdiv.appendChild(elemAR);
+              
+              var elemAG = document.createElement("p");
+              elemAG.appendChild(document.createTextNode("Grade: " + objResponse.grades[i][x]));
+              tabcontentQdiv.appendChild(elemAG);
+              
+              elemAG = document.createElement("input");
+              elemAG.placeholder = "Add new grade here [ex: 25/50]";
+              elemAG.id = objResponse.qids[i][x] + objResponse.students[i] + "ig";
+              tabcontentQdiv.appendChild(elemAG);
+              
+              elemUB = document.createElement("button");
+              elemUB.appendChild(document.createTextNode("+1"));
+              elemUB.id = objResponse.qids[i][x] + objResponse.students[i] + "ub";
+              var ocStr = 'changeQGrade(1, "' + objResponse.grades[i][x] + '", "' + objResponse.qids[i][x] + objResponse.students[i] + "ig" + '");';
+              elemUB.setAttribute("onclick", ocStr);
+              tabcontentQdiv.appendChild(elemUB);
+              
+              elemDB = document.createElement("button");
+              elemDB.appendChild(document.createTextNode("-1"));
+              elemDB.id = objResponse.qids[i][x] + objResponse.students[i] + "db";
+              var ocStr = 'changeQGrade(-1, "' + objResponse.grades[i][x] + '", "' + objResponse.qids[i][x] + objResponse.students[i] + "ig" + '");';
+              elemDB.setAttribute("onclick", ocStr);
+              tabcontentQdiv.appendChild(elemDB);
+              
+              elemRB = document.createElement("button");
+              elemRB.appendChild(document.createTextNode("REVERT GRADE CHANGE"));
+              elemRB.id = objResponse.qids[i][x] + objResponse.students[i] + "rb";
+              var ocStr = 'changeQGrade(0, "' + objResponse.grades[i][x] + '", "' + objResponse.qids[i][x] + objResponse.students[i] + "ig" + '");';
+              elemRB.setAttribute("onclick", ocStr);
+              tabcontentQdiv.appendChild(elemRB);
+              
+              var elemIC = document.createElement("textarea");
+              elemIC.placeholder = "Add your instructor comments here(or just leave a space to delete comments [e.g. ' '])";
+              elemIC.id = objResponse.qids[i][x] + objResponse.students[i] + "tc";
+              tabcontentQdiv.appendChild(elemIC);
+              
+              elemTabcontent.appendChild(tabcontentQdiv); 
+            }
+            getFinalGrades(ucid, password, elemTabcontent, objResponse.students[i]);
+            document.body.appendChild(elemTabcontent);
+          }
+          if (firstClick) {
+            document.getElementById(firstClick).click();
+          }
+        }
+      }
+      ajaxreq.open("POST", "requestCurl.php", true);
+      ajaxreq.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+      ajaxreq.send(studentRequest);
+    }
+    
+    function changeQGrade(cG, gOrig, gId) {
+      var gradeElem = document.getElementById(gId);
+      if (gradeElem.value == "") {
+        gradeElem.value = gOrig;
+      }
+      if (cG == 0) {
+        gradeElem.value = gOrig;
+        return;
+      }
+      
+      gArr = gradeElem.value.split("/");
+      cVal = parseInt(gArr[0]) + cG;
+      gradeElem.value = cVal + "/" + gArr[1];
+    }
+    
+    function getFinalGrades(ucid, password, appendTo, student_ucid) {
+      command = "get_final_grade";
+      
+      var getFinal = "command=" + command + "&ucid=" + ucid + "&password=" + password + "&student_ucid=" + student_ucid;
+      
+      var ajaxreq = new XMLHttpRequest();
+      ajaxreq.onreadystatechange = function () {
+        if (ajaxreq.readyState == 4 && ajaxreq.status == 200) {
+          var strResponse = ajaxreq.responseText;
+          console.log(strResponse);
+          var objResponse = JSON.parse(strResponse);
+          
+          var finalGradediv = document.createElement("div");
+          var finalGrade = document.createElement("h3");
+          finalGrade.id = student_ucid + "fGrade";
+          finalGrade.placeholder = objResponse.final_grade; 
+          
+          finalGrade.appendChild(document.createTextNode("Final Grade: " + objResponse.final_grade + "%"));
+          finalGradediv.appendChild(finalGrade);
+          appendTo.appendChild(finalGradediv);
+        }
+      }
+      ajaxreq.open("POST", "finalCurl.php", true);
+      ajaxreq.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+      ajaxreq.send(getFinal);
+    }
+    function finalizeGrades(ucid, password) {
+      var command = "update_answer";
+      var student_ucid;
+      var qid;
+      var gradeChange;
+      var commentChange;
+      var existingComment;
+      for (var i = 0; i < objEg.students.length; i++) {
+        student_ucid = objEg.students[i];
+        var update = "command=" + command + "&ucid=" + ucid + "&password=" + password;
+        for (var x = 0; x < objEg.qids[i].length; x++) {
+          qid = objEg.qids[i][x];
+          grade = objEg.grades[i][x];
+          update += "&qid=" + qid + "&student_ucid=" + student_ucid; 
+          existingComment = objEg.comments[i][x]; 
+          commentChange = document.getElementById(qid + student_ucid + "tc").value;
+          gradeChange = document.getElementById(qid + student_ucid + "ig").value;
+          if (!commentChange && !gradeChange) {
+            continue;
+          }
+          if (commentChange && commentChange != " ") {
+            if (existingComment == " ") {
+              existingComment = "";
+            }
+            if (existingComment) {
+              commentChange = existingComment + "\n" + commentChange + "\n";
+            } else {
+              commentChange = commentChange + "\n";
+            }
+          }
+          if (gradeChange) {
+            commentChange += "Grade was changed from " + grade + " to " + gradeChange + "\n";
+          }
+          update += "&comment=" + commentChange; 
+          if (gradeChange) {
+            update += "&grade=" + gradeChange;
+          }
+          var ajaxreq = new XMLHttpRequest();
+          ajaxreq.onreadystatechange = function () {
+            if (ajaxreq.readyState == 4 && ajaxreq.status == 200) {
+              var strResponse = ajaxreq.responseText;
+              console.log(strResponse);
+            }
+          }
+          console.log(update);
+          ajaxreq.open("POST", "updatetCurl.php", true);
+          ajaxreq.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+          ajaxreq.send(update); 
+        }
+      }
+      releaseGrades(ucid, password); 
+    }
+    function releaseGrades(ucid, password) {
+      command = "release_exam"
+      release = "command=" + command + "&ucid=" + ucid + "&password=" + password;
+      console.log(release);
+      var ajaxreq = new XMLHttpRequest();
+      ajaxreq.onreadystatechange = function () {
+        if (ajaxreq.readyState == 4 && ajaxreq.status == 200) {
+          var strResponse = ajaxreq.responseText;
+          location.reload();
+        }
+      }
+      ajaxreq.open("POST", "releaseCurl.php", true);
+      ajaxreq.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+      ajaxreq.send(release); 
+    }
+    function tabActivator(event, tabbuttonClass, tabcontentClass, tabcontentid) {
+      var tabscontent = document.getElementsByClassName(tabcontentClass);
+      for (var i = 0; i < tabscontent.length; i++) {
+        tabscontent[i].style.display = "none";
+      }
+      
+      var tabButton = document.getElementsByClassName(tabbuttonClass);
+      for (var i = 0; i < tabButton.length; i++) {
+        tabButton[i].className = tabButton[i].className.replace(" active", "");
+      }
+      document.getElementById(tabcontentid).style.display = "block";
+      event.currentTarget.className += " active";
+    };
+    window.onload = onLoad();
+	</script>
+</html>

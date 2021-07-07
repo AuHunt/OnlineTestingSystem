@@ -1,0 +1,156 @@
+<html>
+  <head>
+    <link rel="stylesheet" type="text/css" href="testReviewer.css">
+    <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+    <meta content="utf-8" http-equiv="encoding">
+	  <title>NND Test Reviewer</title>
+	</head>
+
+	<body>
+    <button onclick="window.location.href = 'https://web.njit.edu/~nr289/sHomepage.html';" id="homebtn">Back</button>
+    <h2>Test Reviewer</h2>
+    <div id="totalform"></div>
+	</body>
+	
+	<script>
+    var objQb;
+    function onLoad() {
+      sessionVerifier(sessionStorage.uSession, sessionStorage.pSession);
+      
+      getQB(sessionStorage.uSession, sessionStorage.pSession);
+    }
+    function getQB(ucid, password) {
+      command = "get_question_bank";
+      request = "command=" + command + "&ucid=" + ucid + "&password=" + password;
+      
+      var ajaxreq = new XMLHttpRequest();
+      ajaxreq.onreadystatechange = function () {
+        if (ajaxreq.readyState == 4 && ajaxreq.status == 200) {
+          var strResponse = ajaxreq.responseText;
+          var objResponse = JSON.parse(strResponse);
+          objQb = objResponse;
+          loadGrades(ucid, password);
+        }
+      }
+      ajaxreq.open("POST", "requestCurl.php", true);
+      ajaxreq.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+      ajaxreq.send(request);
+    }
+    function loadGrades(ucid, password) {
+      command = "get_completed_exam_grades";
+      studentRequest = "command=" + command + "&ucid=" + ucid + "&password=" + password;
+
+      var ajaxreq = new XMLHttpRequest();
+      ajaxreq.onreadystatechange = function () {
+        if (ajaxreq.readyState == 4 && ajaxreq.status == 200) {
+          var strResponse = ajaxreq.responseText;
+          var objResponse = JSON.parse(strResponse);
+          console.log(objResponse);
+          
+          var totalform = document.getElementById("totalform");
+          for (var i = 0; i < objResponse.students.length; i++) {
+            if (objResponse.students[i] == ucid) {
+              var qContent = document.createElement("div");
+              for (var x = 0; x < objResponse.qids[i].length; x++) {
+                var truQ;
+                for (var y = 0; y < objQb.qid.length; y++) {
+                  if (objQb.qid[y] == objResponse.qids[i][x]) {
+                    truQ = objQb.description[y];
+                  }
+                }
+                var elemQ = document.createElement("p");
+                elemQ.appendChild(document.createTextNode("Question " + (x + 1) + ": " + truQ));
+                qContent.appendChild(elemQ);
+                
+                var elemA = document.createElement("pre");
+                elemA.appendChild(document.createTextNode("Your Answer:\n" + objResponse.answers[i][x]));
+                qContent.appendChild(elemA);
+                
+                var elemAR = document.createElement("pre");
+                elemAR.innerHTML = "Autograder:\n" + objResponse.autograder[i][x];
+                qContent.appendChild(elemAR);
+                
+                var elemIR = document.createElement("pre");
+                elemIR.appendChild(document.createTextNode("Instructor Comments:\n" + objResponse.comments[i][x]));
+                qContent.appendChild(elemIR);
+                
+                var elemAG = document.createElement("p");
+                elemAG.appendChild(document.createTextNode(objResponse.grades[i][x]));
+                qContent.appendChild(elemAG); 
+              }
+              totalform.appendChild(qContent);
+              getFinalGrades(ucid, password, totalform);
+            }
+          }
+        }
+      }
+      ajaxreq.open("POST", "requestCurl.php", true);
+      ajaxreq.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+      ajaxreq.send(studentRequest);
+    }
+    function getFinalGrades(ucid, password, appendTo, student_ucid) {
+      command = "get_final_grade";
+      
+      var getFinal = "command=" + command + "&ucid=" + ucid + "&password=" + password + "&student_ucid=" + ucid;
+      
+      var ajaxreq = new XMLHttpRequest();
+      ajaxreq.onreadystatechange = function () {
+        if (ajaxreq.readyState == 4 && ajaxreq.status == 200) {
+          var strResponse = ajaxreq.responseText;
+          var objResponse = JSON.parse(strResponse);
+          
+          var finalGradediv = document.createElement("div");
+          finalGradediv.id = "finalGradediv";
+          var finalGrade = document.createElement("h3");
+          
+          finalGrade.appendChild(document.createTextNode("Final Grade: " + objResponse.final_grade + "%"));
+          finalGradediv.appendChild(finalGrade);
+          appendTo.appendChild(finalGradediv);
+        }
+      }
+      ajaxreq.open("POST", "finalCurl.php", true);
+      ajaxreq.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+      ajaxreq.send(getFinal);
+    }
+    function sessionVerifier(ucid, password) {
+      var ucid = ucid;
+      var password = password;
+      var command = "login";
+      var verification = "command=" + command + "&ucid=" + ucid + "&password=" + password;
+      
+      var ajaxreq = new XMLHttpRequest();
+      ajaxreq.onreadystatechange = function () {
+        if (ajaxreq.readyState == 4 && ajaxreq.status == 200) {
+          var statusArr = ajaxreq.responseText;
+          var statusObj = JSON.parse(statusArr);
+          if (statusObj.userType != 0) {
+            window.location.href = "https://web.njit.edu/~nr289/badSession.html";
+          }
+          releaseCheck(ucid, password);
+        }
+      }
+      ajaxreq.open("POST", "requestCurl.php", true);
+      ajaxreq.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+      ajaxreq.send(verification);
+    };
+    function releaseCheck(ucid, password) {
+      command = "grade_release_check";
+      var check = "command=" + command + "&ucid=" + ucid + "&password=" + password;
+      
+      var ajaxreq = new XMLHttpRequest();
+      ajaxreq.onreadystatechange = function () {
+        if (ajaxreq.readyState == 4 && ajaxreq.status == 200) {
+          var strResponse = ajaxreq.responseText;
+          var objResponse = JSON.parse(strResponse);
+          if (objResponse.released == "0") {
+            window.location.href = "https://web.njit.edu/~nr289/badSession.html";            
+          }
+        }
+      }
+      ajaxreq.open("POST", "requestCurl.php", true);
+      ajaxreq.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+      ajaxreq.send(check);
+    }
+    window.onload = onLoad();
+	</script>
+</html>

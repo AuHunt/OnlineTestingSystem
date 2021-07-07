@@ -1,0 +1,68 @@
+<html>
+  <head>
+    <link rel="stylesheet" type="text/css" href="login.css">
+    <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+    <meta content="utf-8" http-equiv="encoding">
+	  <title>NND LOGIN</title>
+	</head>
+
+	<body>
+     
+    <div class="SignInForm">
+    
+  		<h2>NND Login Form<h2/>
+  
+  		<form id="loginform">
+        <label for="ucid"><b>Username:</b></label>
+  			<input type="text" id="ucid" placeholder="Enter UCID">
+        <label for="password"><b><br>Password:</b></label>
+  			<input type="password" id="password" placeholder="Enter Password"><br>
+        <button type="button" value="Submit" onclick="updateomatic();">Sign In</button>
+  		</form>
+     
+      <p id="backendStatus"></p>
+    
+    </div>
+   
+	</body>
+ 
+  <script>
+  	function updateomatic() {
+      var ucid = document.getElementById("ucid").value;
+      var password = document.getElementById("password").value;
+      var command = "login";
+      var formData = "command=" + command + "&ucid=" + ucid + "&password=" + password;
+      
+      var ajaxreq = new XMLHttpRequest();
+      ajaxreq.onreadystatechange = function () {
+        if (ajaxreq.readyState == 4 && ajaxreq.status == 200) {
+          var strResponse = ajaxreq.responseText;
+          console.log(strResponse);
+          var objResponse = JSON.parse(strResponse);
+          var dbResp = "";
+          
+          if (objResponse.status_db == "0") {
+            dbResp = "Database response: Access denied.";
+          } else if (objResponse.status_db == "1") {
+            dbResp = "Database response: Access granted: Welcome, " + ucid + "!";
+            sessionStorage.uSession = ucid;
+            sessionStorage.pSession = password;
+            if (objResponse.userType == "1"){
+              window.location.href = "https://web.njit.edu/~nr289/iHomepage.html";
+            } else if (objResponse.userType == "0"){
+              window.location.href = "https://web.njit.edu/~nr289/sHomepage.html";
+            }
+          } else {
+            dbResp = "Database response: Error in database request or response.";
+          }
+          document.getElementById("backendStatus").innerHTML = dbResp;
+        }
+      };
+      
+      ajaxreq.open("POST", "requestCurl.php", true);
+      ajaxreq.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+      ajaxreq.send(formData);
+    }
+	</script>
+ 
+</html>

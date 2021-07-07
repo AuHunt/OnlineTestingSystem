@@ -1,0 +1,53 @@
+<html>
+  <head>
+    <link rel="stylesheet" type="text/css" href="iHomepage.css">
+    <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+    <meta content="utf-8" http-equiv="encoding">
+	  <title>NND Homepage</title>
+	</head>
+
+	<body>
+    <button onclick="logout();" id="homebtn">LOGOUT</button>
+    <div class="menuForm">
+      <h2>Instructor Homepage</h2>
+      <button type="button" class="HoverBoi" id="tcButton" onclick="redirector(this.id);">Test Creator</button>
+      <button type="button" class="HoverBoi" id="geButton" onclick="redirector(this.id);">Grade Editor</button> 
+    </div>
+        
+	</body>
+ 
+  <script>
+    function sessionVerifier(ucid, password) {
+      var command = "login";
+      var request = "command=" + command + "&ucid=" + ucid + "&password=" + password;
+      
+      var ajaxreq = new XMLHttpRequest();
+      ajaxreq.onreadystatechange = function () {
+        if (ajaxreq.readyState == 4 && ajaxreq.status == 200) {
+          var strResponse = ajaxreq.responseText;
+          var objReponse = JSON.parse(strResponse);
+          if (objReponse.userType != 1) {
+            window.location.href = "https://web.njit.edu/~nr289/badSession.html";
+          }
+        }
+      }
+      ajaxreq.open("POST", "requestCurl.php", true);
+      ajaxreq.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+      ajaxreq.send(request);
+    };
+    function logout() {
+      sessionStorage.uSession = '';
+      sessionStorage.pSession = '';
+      window.location.href = 'https://web.njit.edu/~nr289/login.html';
+    };
+  	function redirector(elemId) {
+      if (elemId == "tcButton"){
+        window.location.href = "https://web.njit.edu/~nr289/testCreator.html";
+      } else if (elemId == "geButton"){
+        window.location.href = "https://web.njit.edu/~nr289/gradeEditor.html";
+      }
+    };
+    window.onload = sessionVerifier(sessionStorage.uSession, sessionStorage.pSession);
+	</script>
+ 
+</html>

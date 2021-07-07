@@ -1,0 +1,59 @@
+body{
+  background-color: #000000;
+}
+
+input, label {
+  display: block;
+}
+
+.SignInForm {
+  background-color: #596673;
+  position: absolute;
+  top: 25%;
+  left: 30%;
+  width: 40%;
+  height: 50%;
+  padding: 5px;
+  border: 2px solid #F0F8FF;
+}
+
+.SignInForm h2 {
+  text-align: center;
+}
+
+.SignInForm input{
+  position: relative;
+  left: 15%;
+  width: 70%;
+  padding: 20px;
+  margin-top: 4px;
+  border: none;
+  color: black;
+  font-size: 15px;
+}
+
+.SignInForm button{
+  width: 70%;
+  padding: 18px;
+  margin-top: 4px;
+  font-size: 20px;
+  background-color: #B0C4DE;
+  border: 2px solid #F0F8FF;
+  color: #454545;
+}
+
+.SignInForm button:active {
+  opacity: 0.6;
+}
+
+.SignInForm p{
+  position: relative;
+  left: 25%;
+  width: 50%;
+  margin-top: 25px;
+  background-color: inherit;
+  text-align: center;
+  border-color: black;
+  font-size: 20px;
+  color: white;
+}
